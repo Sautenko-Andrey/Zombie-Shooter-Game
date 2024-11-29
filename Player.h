@@ -8,7 +8,7 @@ public:
 
     Player();
 
-    void spawn(sf::IntRect arena, sf::Vector2f resolution, int tile_size);
+    void spawn(sf::IntRect arena, sf::Vector2f resolution, int tilte_size);
 
     // Call this at the end of every game
     void resetPlayerStats();
@@ -67,7 +67,7 @@ private:
     sf::Vector2f m_position;
 
     // The Sprite
-    sf::Sprite sprite;
+    sf::Sprite m_sprite;
 
     // And a Texture
     // !! Watch this space - Changes here soon!!
@@ -77,7 +77,7 @@ private:
     sf::Vector2f m_resolution;
 
     // What size is the current area
-    sf::IntRect m_area;
+    sf::IntRect m_arena;
 
     // How big is each tile of the arena
     int m_tile_size;
