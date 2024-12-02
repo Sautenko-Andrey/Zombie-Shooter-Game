@@ -1,11 +1,12 @@
 #include "Player.h"
+#include <cmath>
 
 Player::Player()
-: m_speed{START_SPEED},
+: m_sprite(),
+  m_texture(),
   m_health{START_HEALTH},
   m_max_health{START_HEALTH},
-  m_texture(),
-  m_sprite()
+  m_speed{START_SPEED}
 {
     // Associate a texture with the sprite
     // !! Watch this space !!
@@ -31,8 +32,8 @@ void Player::spawn(sf::IntRect arena, sf::Vector2f resolution, int title_size){
     */
 
     // Place the player in the middle of the arena
-    m_position.x = arena.width / 2;
-    m_position.y = arena.height / 2;
+    m_position.x = static_cast<float>(arena.width / 2);
+    m_position.y = static_cast<float>(arena.height / 2);
 
     // Copy the details of the arena to the player's m_arena
     m_arena.left = arena.left;
@@ -66,8 +67,21 @@ void Player::resetPlayerStats(){
 bool Player::hit(sf::Time time_hit){
 
     /*
-
+        First, the if statement checks to see whether the time that’s 
+        passed in as a parameter is 200 milliseconds further ahead than 
+        the time stored in m_LastHit. If it is, m_LastHit is updated 
+        with the time passed in and m_Health has 10 deducted from its 
+        current value.
     */
+
+    if(time_hit.asMilliseconds() - m_last_hit.asMilliseconds() > 200){
+        m_last_hit = time_hit;
+        m_health -= 10;
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
 
@@ -80,6 +94,8 @@ sf::Time Player::getLastHitTime(){
         that the player isn’t punished too frequently for making
         contact with a zombie.
     */
+
+    return m_last_hit;
 }
 
 
@@ -92,6 +108,7 @@ sf::FloatRect Player::getPosition(){
         This is also useful for collision detection.
     */
 
+    return m_sprite.getGlobalBounds();
 }
 
 
@@ -103,6 +120,7 @@ sf::Vector2f Player::getCenter(){
         the very center of the player graphic.
     */
 
+    return m_position;
 }
 
 
@@ -114,6 +132,7 @@ float Player::getRotation(){
         0 degrees and increases clockwise.
     */
 
+    return m_sprite.getRotation();
 }
 
 
@@ -124,44 +143,61 @@ sf::Sprite Player::getSprtite(){
         that represents the player.
     */
 
+    return m_sprite;
 }
 
 void Player::moveLeft(){
+
+    m_left_pressed = true;
 
 }
 
 
 void Player::moveRight(){
 
+    m_right_pressed = true;
+
 }
 
 
 void Player::moveUp(){
+
+    m_up_pressed = true;
 
 }
 
 
 void Player::moveDown(){
 
+    m_down_pressed = true;
+
 }
 
 
 void Player::stopLeft(){
+
+    m_left_pressed = false;
 
 }
 
 
 void Player::stopRight(){
 
+    m_right_pressed = false;
+
 }
 
 
 void Player::stopUp(){
 
+    m_up_pressed = false;
+
 }
 
 
 void Player::stopDown(){
+
+    m_down_pressed = false;
 
 }
 
@@ -179,6 +215,47 @@ void Player::update(float elapsed_time, sf::Vector2i mouse_position){
         pointer/crosshair.
     */
 
+    if(m_up_pressed){
+        m_position.y -= m_speed * elapsed_time;
+    }
+
+    if(m_down_pressed){
+        m_position.y += m_speed * elapsed_time;
+    }
+
+    if(m_right_pressed){
+        m_position.x += m_speed * elapsed_time;
+    }
+
+    if(m_left_pressed){
+        m_position.x -= m_speed * elapsed_time;
+    }
+
+    m_sprite.setPosition(m_position);
+
+    // Keep the player in the arena
+    if(m_position.x > static_cast<float>(m_arena.width - m_tile_size)){
+        m_position.x = static_cast<float>(m_arena.width - m_tile_size);
+    }
+
+    if(m_position.x < static_cast<float>(m_arena.left + m_tile_size)){
+        m_position.x = static_cast<float>(m_arena.left + m_tile_size);
+    }
+
+    if(m_position.y > static_cast<float>(m_arena.height - m_tile_size)){
+        m_position.y = static_cast<float>(m_arena.height - m_tile_size);
+    }
+
+    if(m_position.y < static_cast<float>(m_arena.top + m_tile_size)){
+        m_position.y = static_cast<float>(m_arena.top + m_tile_size);
+    }
+
+    // Calculate the angle the player is facing
+    float angle = static_cast<float>((atan2(static_cast<float>(mouse_position.y) - m_resolution.y / 2,
+        static_cast<float>(mouse_position.x) - m_resolution.x / 2) * 180) / 3.141);
+
+    m_sprite.setRotation(angle);
+
 }
 
 
@@ -187,6 +264,8 @@ void Player::upgradeSpeed(){
         A function that can be called from the leveling-up screen when 
         the player chooses to make the character move faster.
     */
+
+    m_speed += static_cast<float>((START_SPEED * 0.2));
 }
 
 
@@ -196,6 +275,8 @@ void Player::upgradeHealth(){
         Another function that can be called from the leveling-up screen 
         when the player chooses to make the character move stronger
     */
+
+    m_max_health += static_cast<float>((START_HEALTH * 0.2));
 
 }
 
@@ -209,10 +290,17 @@ void Player::increaseHealthLevel(int amount){
         when the player picks up a health pick-up.
     */
 
+    m_health += static_cast<float>(amount);
+
+    // But not beyond the maximum
+    if(m_health > m_max_health){
+        m_health = m_max_health;
+    }
+
 }
 
 
-int Player::getHealth(){
+float Player::getHealth(){
 
     /*
         With the level of health being as dynamic as it is, we need to be 
@@ -220,4 +308,5 @@ int Player::getHealth(){
         moment. This function returns an int, which holds that value.
     */
 
+    return m_health;
 }

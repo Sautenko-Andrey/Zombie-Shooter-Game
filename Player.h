@@ -56,7 +56,7 @@ public:
     void increaseHealthLevel(int amount);
 
     // How much health has the player currently got?
-    int getHealth();
+    float getHealth();
 
 private:
 
@@ -89,15 +89,14 @@ private:
     bool m_right_pressed;
 
     // How much health has the player got?
-    int m_health;
+    float m_health;
 
     // What is the max' health the player can have
-    int m_max_health;
+    float m_max_health;
 
     // When was the player last hit
     sf::Time m_last_hit;
 
     // Speed in pixels per second
     float m_speed;
-
 };
