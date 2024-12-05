@@ -7,6 +7,23 @@ class Zombie {
 
 public:
 
+    // Handle when a bullet hits a zombie
+    bool hit();
+
+    // Fid out if the zombie is alive
+    bool isAlive();
+
+    // Spawn a new zombie
+    void spawn(float start_x, float start_y, int type, int seed);
+
+    // return a rectangle that is the position in the world
+    sf::FloatRect getPosition();
+
+    // Get a copy of the Sprite to draw
+    sf::Sprite getSprite();
+
+    // Update the zombie each frame
+    void update(float elapsed_time, sf::Vector2f player_location);
 
 
 private:
@@ -38,6 +55,10 @@ private:
     float m_health;
 
     // Is it still alive?
-    bool is_alive;
+    bool m_alive;
+
+    // Set up a zombie (my function)
+    void setUpZombie(const std::string &texture_path,
+                     float zombie_speed, float zombie_health);
 
 };

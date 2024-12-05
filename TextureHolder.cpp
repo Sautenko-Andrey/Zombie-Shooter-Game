@@ -55,7 +55,7 @@ std::map<std::string, sf::Texture>& TextureHolderV2::getTexturesContainer()
     return m_textures;
 }
 
-sf::Texture& TextureHolderV2::getTexture(const std::string file_name){
+sf::Texture& TextureHolderV2::getTexture(const std::string &file_name){
 
     auto &textures = getTexturesContainer();
 

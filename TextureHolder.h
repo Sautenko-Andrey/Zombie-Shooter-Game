@@ -31,7 +31,7 @@ public:
 
     static TextureHolderV2& getInstance();
 
-    sf::Texture& getTexture(const std::string file_name);
+    sf::Texture& getTexture(const std::string &file_name);
 
 
 private:
