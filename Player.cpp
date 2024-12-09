@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "TextureHolder.h"
 #include <cmath>
 
 Player::Player()
@@ -10,8 +11,12 @@ Player::Player()
 {
     // Associate a texture with the sprite
     // !! Watch this space !!
-    m_texture.loadFromFile("graphics/player.png");
-    m_sprite.setTexture(m_texture);
+    // m_texture.loadFromFile("graphics/player.png");
+    // m_sprite.setTexture(m_texture);
+
+    m_sprite = sf::Sprite(TextureHolder::getTexture(
+        "graphics/player.png"
+    ));
 
     // Set the origin of the sprite to the center,
     // for smooth rotation

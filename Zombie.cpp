@@ -2,6 +2,7 @@
 #include "TextureHolder.h"
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 
 enum class ZombieType{
     Bloater, Chaser, Crawler
@@ -17,6 +18,21 @@ bool Zombie::hit(){
         (setting m_alive to false).
     */
 
+    --m_health;
+
+    if(m_health < 0){
+        // dead
+        m_alive = false;
+
+        m_sprite.setTexture(
+            TextureHolder::getTexture("graphics/blood.png")
+        );
+
+        return true;
+    }
+    
+    // Zombie is injured but not dead yet
+    return false;
 }
 
 
@@ -29,6 +45,7 @@ bool Zombie::isAlive(){
         a blood splat.
     */
 
+    return m_alive;
 }
 
 void Zombie::setUpZombie(const std::string &texture_path,
@@ -78,14 +95,40 @@ void Zombie::spawn(float start_x, float start_y, int type, int seed){
 
     // Modify the speed to make the zombie unique
     // Every zombie is unique. Create a speed modifier.
+    srand((int)time(0) * seed);
+    
+    // Somewhere between 80 and 100
+    float modifier = (rand() % MAX_VARRIANCE) + OFFSET;
+
+    // Express this as a fraction of 1
+    modifier /= 100;   // now euqlas between 0.7 and 1
+
+    m_speed *= modifier;
+
+    // Initialize its location
+    m_position.x = start_x;
+    m_position.y = start_y;
+
+    // Set its origin to its center
+    m_sprite.setOrigin(25, 25);
+
+    // Set its position
+    m_sprite.setPosition(m_position);
+}
+
+
+sf::FloatRect Zombie::getPosition(){
+
+    return m_sprite.getGlobalBounds();
 
 }
 
 
-sf::FloatRect Zombie::getPosition(){}
+sf::Sprite Zombie::getSprite(){
 
+    return m_sprite;
 
-sf::Sprite Zombie::getSprite(){}
+}
 
 
 void Zombie::update(float elapsed_time, sf::Vector2f player_location){
@@ -97,5 +140,36 @@ void Zombie::update(float elapsed_time, sf::Vector2f player_location){
         of the center of the player.
         This vector to chase after the player.
     */
+
+    auto player_x = player_location.x;
+
+    auto player_y = player_location.y;
+
+    // Update the zombie position variables
+    if(player_x > m_position.x){
+        m_position.x += (m_speed * elapsed_time);
+    }
+
+    if(player_y > m_position.y){
+        m_position.y += (m_speed * elapsed_time);
+    }
+
+    if(player_x < m_position.x){
+        m_position.x -= m_speed * elapsed_time;
+    }
+
+    if(player_y < m_position.y){
+        m_position.y -= m_speed * elapsed_time;
+    }
+
+    // Move the sprite
+    m_sprite.setPosition(m_position);
+
+    // Face the sprite in the correct direction
+    auto angle = (
+        (atan2(player_y - m_position.y, player_x - m_position.x) * 180) / 3.141
+    );
+
+    m_sprite.setRotation(angle);
 
 }
