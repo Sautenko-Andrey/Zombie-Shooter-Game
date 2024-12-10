@@ -2,6 +2,8 @@
 #include "Player.h"
 #include "ZombieArena.h"
 #include "TextureHolder.h"
+#include "Bullet.h"
+#include "Pickup.h"
 
 
 
@@ -67,6 +69,31 @@ int main(){
 
     Zombie *zombies = nullptr;
 
+    // 100 bullets should do
+    Bullet bullets[100];
+    int current_bullet = 0;
+    int bullets_spare = 24;
+    int bullets_in_clip = 6;
+    int clip_size = 6;
+    float fire_rate = 1.0f;
+
+    // When was fire button last pressed?
+    sf::Time last_pressed;
+
+    // Hide the mouse pointer and replaceit with a crosshair
+    window.setMouseCursorVisible(false);
+    sf::Sprite sprite_crosshair;
+    sf::Texture texture_crosshair = TextureHolder::getTexture(
+        "graphics/crosshair.png"
+    );
+
+    sprite_crosshair.setTexture(texture_crosshair);
+    sprite_crosshair.setOrigin(25, 25);
+
+    // Create a couple of pickups
+    Pickup health_pickup(PickupType::Health);
+    Pickup ammo_pickup(PickupType::Ammo);
+
     // The main game loop
     while(window.isOpen()){
 
@@ -100,7 +127,22 @@ int main(){
                             state = State::LEVELING_UP;
                         }
                 if(state == State::PLAYING){
-
+                    // Reloading
+                    if(event.key.code == sf::Keyboard::R){
+                        if(bullets_spare > clip_size){
+                            // Plenty of bullets. Allow reload
+                            bullets_in_clip = clip_size;
+                            bullets_spare -= clip_size;
+                        }
+                        else if(bullets_spare > 0){
+                            // Only few bullets left
+                            bullets_in_clip = bullets_spare;
+                            bullets_spare = 0;
+                        }
+                        else{
+                            // More here soon!!!
+                        }
+                    }
                 }
             }
         } // End event polling
@@ -140,6 +182,31 @@ int main(){
             }
             else{
                 player.stopRight();
+            }
+
+            // Fire a bullet
+            if(sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+                if(game_time_total.asMilliseconds() -
+                   last_pressed.asMilliseconds() > 1000 / fire_rate &&
+                   bullets_in_clip > 0)
+                {
+                    // Path the centre of the player
+                    // and the centre of the crosshair
+                    // to the shoot function
+                    bullets[current_bullet].shoot(
+                        player.getCenter().x, player.getCenter().y,
+                        mouse_world_position.x, mouse_world_position.y
+                    );
+
+                    ++current_bullet;
+
+                    if(current_bullet > 99){
+                        current_bullet = 0;
+                    }
+
+                    last_pressed = game_time_total;
+                    --bullets_in_clip;
+                }
             }
         }// End WASD while playing
 
@@ -187,6 +254,10 @@ int main(){
                 // Spawn the player in the middle of the arena
                 player.spawn(arena, resolution, tile_size);
 
+                // Configure the pick-ups
+                health_pickup.setArena(arena);
+                ammo_pickup.setArena(arena);
+
                 // Create a horde of zombies
                 num_zombies = 10;
 
@@ -226,6 +297,9 @@ int main(){
                 sf::Mouse::getPosition(), main_view
             );
 
+            // Set the crosshair to the mouse world location
+            sprite_crosshair.setPosition(mouse_world_position);
+
             // Update the player
             player.update(dt_as_seconds, sf::Mouse::getPosition());
 
@@ -241,6 +315,17 @@ int main(){
                     zombies[i].update(dt.asSeconds(), player_position);
                 }
             }
+
+            // Update any bullets that are in-flight
+            for(int i = 0; i < 100; ++i){
+                if(bullets[i].isInFlyght()){
+                    bullets[i].update(dt_as_seconds);
+                }
+            }
+
+            // Update the pickups
+            health_pickup.update(dt_as_seconds);
+            ammo_pickup.update(dt_as_seconds);
 
         } // End updating the scene
 
@@ -266,8 +351,27 @@ int main(){
                 window.draw(zombies[i].getSprite());
             }
 
+            // Draw bullets
+            for(int i = 0; i < 100; ++i){
+                if(bullets[i].isInFlyght()){
+                    window.draw(bullets[i].getShape());
+                }
+            }
+
             // Draw the player
             window.draw(player.getSprtite());
+
+            // Draw the pickups if currently spawned
+            if(ammo_pickup.isSpawned()){
+                window.draw(ammo_pickup.getSprite());
+            }
+
+            if(health_pickup.isSpawned()){
+                window.draw(health_pickup.getSprite());
+            }
+
+            // Draw the crosshair
+            window.draw(sprite_crosshair);
 
         }
 

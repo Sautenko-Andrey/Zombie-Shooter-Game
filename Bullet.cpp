@@ -8,7 +8,11 @@ Bullet::Bullet(){
 }
 
 
-void Bullet::stop(){}
+void Bullet::stop(){
+
+    m_in_flyght = false;
+
+}
 
 
 bool Bullet::isInFlyght(){
@@ -16,6 +20,8 @@ bool Bullet::isInFlyght(){
     /*
         Test whether a bullet is currently in flight or not
     */
+
+    return m_in_flyght;
 
 }
 
@@ -67,10 +73,34 @@ void Bullet::shoot(float start_x, float start_y,
 }
 
 
-sf::FloatRect Bullet::getPosition(){}
+sf::FloatRect Bullet::getPosition(){
+
+    return m_bullet_shape.getGlobalBounds();
+
+}
 
 
-sf::RectangleShape Bullet::getShape(){}
+sf::RectangleShape Bullet::getShape(){
+
+    return m_bullet_shape;
+
+}
 
 
-void Bullet::update(float elapsed_time){}
+void Bullet::update(float elapsed_time){
+
+    // Update the bullet position variables
+    m_position.x += m_bullet_distance_x * elapsed_time;
+    m_position.y += m_bullet_distance_y * elapsed_time;
+
+    // Move the bullet
+    m_bullet_shape.setPosition(m_position);
+
+    // Has the bullet gone out of a range?
+    if(m_position.x < m_min_x || m_position.x > m_max_x ||
+       m_position.y < m_min_y || m_position.y > m_max_y){
+
+        m_in_flyght = false;
+    }
+
+}
