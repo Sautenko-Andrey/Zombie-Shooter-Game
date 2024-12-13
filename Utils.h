@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <memory>
 
 
@@ -13,3 +14,4 @@ std::shared_ptr<sf::Text> setUpTextObject(const sf::Font &font,
                                           sf::Color color, 
                                           sf::Vector2i position,
                                           const std::string &text = "");
+

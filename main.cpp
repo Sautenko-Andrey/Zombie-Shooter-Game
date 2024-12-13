@@ -1,5 +1,7 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <sstream>
+#include <fstream>
 #include "Player.h"
 #include "ZombieArena.h"
 #include "TextureHolder.h"
@@ -157,6 +159,14 @@ int main(){
     auto ptr_score_text = setUpTextObject(font, 55, sf::Color::White,
                                           sf::Vector2i(20, 0));
 
+    // Load the hi score from a text file
+    std::ifstream input_file("gamedata/scores.txt");
+    if(input_file.is_open()){
+        // >> reads the data
+        input_file >> hi_score;
+        input_file.close();
+    }
+
     // Hi score
     std::stringstream hi_score_stream;
     hi_score_stream << "Record score: " << hi_score;
@@ -185,6 +195,49 @@ int main(){
 
     // How often (in frames) we should update the hood
     int fps_measurement_frame_interval = 1000;
+
+    // Prepare the hit sound
+    sf::SoundBuffer hit_buffer;
+    hit_buffer.loadFromFile("sound/hit.wav");
+    sf::Sound hit_sound;
+    hit_sound.setBuffer(hit_buffer);
+
+    // Prepare the splat sound
+    sf::SoundBuffer splat_buffer;
+    splat_buffer.loadFromFile("sound/splat.wav");
+    sf::Sound splat_sound;
+    splat_sound.setBuffer(splat_buffer);
+
+    // Prepare the shoot sound
+    sf::SoundBuffer shoot_buffer;
+    shoot_buffer.loadFromFile("sound/shoot.wav");
+    sf::Sound shoot_sound;
+    shoot_sound.setBuffer(shoot_buffer);
+
+    // Prepare the reload sound
+    sf::SoundBuffer reload_buffer;
+    reload_buffer.loadFromFile("sound/reload.wav");
+    sf::Sound reload_sound;
+    reload_sound.setBuffer(reload_buffer);
+
+    // Prepare the reload failed sound
+    sf::SoundBuffer reload_failed_buffer;
+    reload_failed_buffer.loadFromFile("sound/reload_failed.wav");
+    sf::Sound reload_failed_sound;
+    reload_failed_sound.setBuffer(reload_failed_buffer);
+
+
+    // Prepare the power up sound
+    sf::SoundBuffer powerup_buffer;
+    powerup_buffer.loadFromFile("sound/powerup.wav");
+    sf::Sound powerup_sound;
+    powerup_sound.setBuffer(powerup_buffer);
+
+    // Prepare the pickup sound
+    sf::SoundBuffer pickup_buffer;
+    pickup_buffer.loadFromFile("sound/pickup.wav");
+    sf::Sound pickup_sound;
+    pickup_sound.setBuffer(pickup_buffer);
 
     // The main game loop
     while(window.isOpen()){
@@ -216,23 +269,46 @@ int main(){
                 // Start a new game while in GAME_OVER state
                 else if(event.key.code == sf::Keyboard::Return &&
                         state == State::GAME_OVER){
+
                             state = State::LEVELING_UP;
+
+                            wave = 0;
+                            score = 0;
+
+                            // Prepare the gun and ammo for next game
+                            current_bullet = 0;
+                            bullets_spare = 24;
+                            bullets_in_clip = 6;
+                            clip_size = 6;
+                            fire_rate = 1;
+
+                            // Reset the player's stats
+                            player.resetPlayerStats();
                         }
                 if(state == State::PLAYING){
                     // Reloading
                     if(event.key.code == sf::Keyboard::R){
                         if(bullets_spare > clip_size){
+
                             // Plenty of bullets. Allow reload
                             bullets_in_clip = clip_size;
                             bullets_spare -= clip_size;
+
+                            // Play reload sound
+                            reload_sound.play();
                         }
                         else if(bullets_spare > 0){
+
                             // Only few bullets left
                             bullets_in_clip = bullets_spare;
                             bullets_spare = 0;
+
+                            // Play reload sound
+                            reload_sound.play();
                         }
                         else{
                             // More here soon!!!
+                            reload_failed_sound.play();
                         }
                     }
                 }
@@ -297,6 +373,7 @@ int main(){
                     }
 
                     last_pressed = game_time_total;
+                    shoot_sound.play();
                     --bullets_in_clip;
                 }
             }
@@ -307,35 +384,52 @@ int main(){
 
             // Handle the player leveling up
             if(event.key.code == sf::Keyboard::Num1){
+                // Increase fire rate
+                ++fire_rate;
                 state = State::PLAYING;
             }
 
             if(event.key.code == sf::Keyboard::Num2){
+                // Increase clip size
+                clip_size += clip_size;
                 state = State::PLAYING;
             }
 
             if(event.key.code == sf::Keyboard::Num3){
+                // Increase health
+                player.upgradeHealth();
                 state = State::PLAYING;
             }
 
             if(event.key.code == sf::Keyboard::Num4){
+                // Increase speed
+                player.upgradeSpeed();
                 state = State::PLAYING;
             }
 
             if(event.key.code == sf::Keyboard::Num5){
+                // Upgrade health pickup
+                health_pickup.upgrade();
                 state = State::PLAYING;
             }
 
             if(event.key.code == sf::Keyboard::Num6){
+                // Upgrade ammo pickup
+                ammo_pickup.upgrade();
                 state = State::PLAYING;
             }
 
             if(state == State::PLAYING){
+                
+                // Increase the wave number
+                ++wave;
 
                 // Prepare the level
                 // We will modify the next two lines later
-                arena.width = 500;
-                arena.height = 500;
+                // arena.width = 500;
+                // arena.height = 500;
+                arena.width = 500 * wave;
+                arena.height = 500 * wave;
                 arena.left = 0;
                 arena.top = 0;
 
@@ -351,12 +445,16 @@ int main(){
                 ammo_pickup.setArena(arena);
 
                 // Create a horde of zombies
-                num_zombies = 10;
+                // num_zombies = 10;
+                num_zombies = 5 * wave;
 
                 // Delete the previously allocated memory (if it exists)
                 delete[] zombies;
                 zombies = createHorde(num_zombies, arena);
                 num_zombies_alive = num_zombies;
+
+                // Play the powerup sound
+                powerup_sound.play();
 
                 // reset clock so there is not a frame jump
                 clock.restart();
@@ -442,6 +540,8 @@ int main(){
                                 if(num_zombies_alive == 0){
                                     state = State::LEVELING_UP;
                                 }
+
+                                splat_sound.play();
                             }
                         }
                     }
@@ -455,10 +555,16 @@ int main(){
 
                     if(player.hit(game_time_total)){
                         // More here later !!!
+                        hit_sound.play();
                     }
 
                     if(player.getHealth() <= 0){
                         state = State::GAME_OVER;
+                        std::ofstream output_file("gamedata/scores.txt");
+                        if(output_file.is_open()){
+                            output_file << hi_score;
+                            output_file.close();
+                        }  
                     }
 
                 }
@@ -469,6 +575,8 @@ int main(){
                health_pickup.isSpawned()){
 
                 player.increaseHealthLevel(health_pickup.gotIt());
+
+                pickup_sound.play();
             }
 
             // Has the player touched ammo pickup?
@@ -476,6 +584,8 @@ int main(){
                ammo_pickup.isSpawned()){
                 
                 bullets_spare += ammo_pickup.gotIt();
+
+                pickup_sound.play();
             }
 
             // Size up the health bar
